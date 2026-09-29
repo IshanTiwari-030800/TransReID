@@ -18,6 +18,7 @@ def do_train(cfg,
              scheduler,
              loss_fn,
              num_query, local_rank):
+
     log_period = cfg.SOLVER.LOG_PERIOD
     checkpoint_period = cfg.SOLVER.CHECKPOINT_PERIOD
     eval_period = cfg.SOLVER.EVAL_PERIOD
@@ -27,7 +28,9 @@ def do_train(cfg,
 
     logger = logging.getLogger("transreid.train")
     logger.info('start training')
+
     _LOCAL_PROCESS_GROUP = None
+    
     if device:
         model.to(local_rank)
         if torch.cuda.device_count() > 1 and cfg.MODEL.DIST_TRAIN:
