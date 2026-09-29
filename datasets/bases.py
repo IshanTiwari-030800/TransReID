@@ -24,24 +24,40 @@ def read_image(img_path):
 
 
 class BaseDataset(object):
+
     """
     Base class of reid dataset
     """
 
     def get_imagedata_info(self, data):
+
+        """
+        Returns the number of unique person IDs, images, cameras, and views in the dataset.
+        Args:
+            data (list): A list of tuples containing (image path, person ID, camera ID, track ID).
+        Returns:
+            num_pids (int): The number of unique person IDs.
+            num_imgs (int): The number of images in the dataset.
+            num_cams (int): The number of unique camera IDs.
+            num_views (int): The number of unique track IDs.
+        """
+
         pids, cams, tracks = [], [], []
 
         for _, pid, camid, trackid in data:
             pids += [pid]
             cams += [camid]
             tracks += [trackid]
+
         pids = set(pids)
         cams = set(cams)
         tracks = set(tracks)
+
         num_pids = len(pids)
         num_cams = len(cams)
         num_imgs = len(data)
         num_views = len(tracks)
+
         return num_pids, num_imgs, num_cams, num_views
 
     def print_dataset_statistics(self):
@@ -54,6 +70,7 @@ class BaseImageDataset(BaseDataset):
     """
 
     def print_dataset_statistics(self, train, query, gallery):
+
         num_train_pids, num_train_imgs, num_train_cams, num_train_views = self.get_imagedata_info(train)
         num_query_pids, num_query_imgs, num_query_cams, num_train_views = self.get_imagedata_info(query)
         num_gallery_pids, num_gallery_imgs, num_gallery_cams, num_train_views = self.get_imagedata_info(gallery)
@@ -66,7 +83,6 @@ class BaseImageDataset(BaseDataset):
         print("  query    | {:5d} | {:8d} | {:9d}".format(num_query_pids, num_query_imgs, num_query_cams))
         print("  gallery  | {:5d} | {:8d} | {:9d}".format(num_gallery_pids, num_gallery_imgs, num_gallery_cams))
         print("  ----------------------------------------")
-
 
 class ImageDataset(Dataset):
     def __init__(self, dataset, transform=None):

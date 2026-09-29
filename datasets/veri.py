@@ -19,18 +19,19 @@ class VeRi(BaseImageDataset):
        # cameras: 20
        """
 
-    dataset_dir = 'VeRi'
+    def __init__(self, root='', verbose=True, dataset_dir="VeRI-776", **kwargs):
 
-    def __init__(self, root='', verbose=True, **kwargs):
         super(VeRi, self).__init__()
-        self.dataset_dir = osp.join(root, self.dataset_dir)
+        self.dataset_dir = osp.join(root, dataset_dir)
         self.train_dir = osp.join(self.dataset_dir, 'image_train')
         self.query_dir = osp.join(self.dataset_dir, 'image_query')
         self.gallery_dir = osp.join(self.dataset_dir, 'image_test')
-
         self._check_before_run()
 
-        path_train = 'datasets/keypoint_train.txt'
+        print(f"Train directory - {self.train_dir}")
+
+        path_train = osp.join(osp.dirname(osp.abspath(__file__)), 'keypoint_train.txt')
+
         with open(path_train, 'r') as txt:
             lines = txt.readlines()
         self.image_map_view_train = {}
@@ -39,7 +40,7 @@ class VeRi(BaseImageDataset):
             viewid = int(content[-1])
             self.image_map_view_train[osp.basename(content[0])] = viewid
 
-        path_test = 'datasets/keypoint_test.txt'
+        path_test = osp.join(osp.dirname(osp.abspath(__file__)), 'keypoint_test.txt')
         with open(path_test, 'r') as txt:
             lines = txt.readlines()
         self.image_map_view_test = {}
@@ -114,4 +115,3 @@ class VeRi(BaseImageDataset):
         print(view_container, 'view_container')
         print(count, 'samples without viewpoint annotations')
         return dataset
-

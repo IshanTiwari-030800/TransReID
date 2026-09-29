@@ -23,12 +23,10 @@ Hacked together by / Copyright 2020 Ross Wightman
 import math
 from functools import partial
 from itertools import repeat
-
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from torch._six import container_abcs
-
+import collections.abc as container_abcs
 
 # From PyTorch internals
 def _ntuple(n):
@@ -225,18 +223,23 @@ class HybridEmbed(nn.Module):
                 training = backbone.training
                 if training:
                     backbone.eval()
+
                 o = self.backbone(torch.zeros(1, in_chans, img_size[0], img_size[1]))
+
                 if isinstance(o, (list, tuple)):
                     o = o[-1]  # last feature if backbone outputs list/tuple of features
+
                 feature_size = o.shape[-2:]
                 feature_dim = o.shape[1]
                 backbone.train(training)
         else:
             feature_size = to_2tuple(feature_size)
+
             if hasattr(self.backbone, 'feature_info'):
                 feature_dim = self.backbone.feature_info.channels()[-1]
             else:
                 feature_dim = self.backbone.num_features
+
         self.num_patches = feature_size[0] * feature_size[1]
         self.proj = nn.Conv2d(feature_dim, embed_dim, 1)
 
@@ -294,13 +297,16 @@ class TransReID(nn.Module):
     def __init__(self, img_size=224, patch_size=16, stride_size=16, in_chans=3, num_classes=1000, embed_dim=768, depth=12,
                  num_heads=12, mlp_ratio=4., qkv_bias=False, qk_scale=None, drop_rate=0., attn_drop_rate=0., camera=0, view=0,
                  drop_path_rate=0., hybrid_backbone=None, norm_layer=nn.LayerNorm, local_feature=False, sie_xishu =1.0):
+
         super().__init__()
         self.num_classes = num_classes
         self.num_features = self.embed_dim = embed_dim  # num_features for consistency with other models
         self.local_feature = local_feature
+
         if hybrid_backbone is not None:
             self.patch_embed = HybridEmbed(
                 hybrid_backbone, img_size=img_size, in_chans=in_chans, embed_dim=embed_dim)
+
         else:
             self.patch_embed = PatchEmbed_overlap(
                 img_size=img_size, patch_size=patch_size, stride_size=stride_size, in_chans=in_chans,
@@ -313,17 +319,20 @@ class TransReID(nn.Module):
         self.cam_num = camera
         self.view_num = view
         self.sie_xishu = sie_xishu
+
         # Initialize SIE Embedding
         if camera > 1 and view > 1:
             self.sie_embed = nn.Parameter(torch.zeros(camera * view, 1, embed_dim))
             trunc_normal_(self.sie_embed, std=.02)
             print('camera number is : {} and viewpoint number is : {}'.format(camera, view))
             print('using SIE_Lambda is : {}'.format(sie_xishu))
+
         elif camera > 1:
             self.sie_embed = nn.Parameter(torch.zeros(camera, 1, embed_dim))
             trunc_normal_(self.sie_embed, std=.02)
             print('camera number is : {}'.format(camera))
             print('using SIE_Lambda is : {}'.format(sie_xishu))
+
         elif view > 1:
             self.sie_embed = nn.Parameter(torch.zeros(view, 1, embed_dim))
             trunc_normal_(self.sie_embed, std=.02)

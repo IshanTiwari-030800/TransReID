@@ -6,12 +6,8 @@ MODEL:
   IF_WITH_CENTER: 'no'
   NAME: 'transformer'
   NO_MARGIN: True
-  DEVICE_ID: ('2')
   TRANSFORMER_TYPE: 'vit_base_patch16_224_TransReID'
   STRIDE_SIZE: [12, 12]
-  SIE_CAMERA: True
-  SIE_VIEW: True
-  SIE_COE: 3.0
   JPM: True
   SHIFT_NUM: 8
   RE_ARRANGE: True
@@ -26,8 +22,8 @@ INPUT:
   PIXEL_STD: [0.5, 0.5, 0.5]
 
 DATASETS:
-  NAMES: ('veri')
-  ROOT_DIR: ("/home/ishan/Desktop/Ishans_workspace/datasets/")
+  NAMES: ('veriwild')
+  ROOT_DIR: ('../../data')
 
 DATALOADER:
   SAMPLER: 'softmax_triplet'
@@ -37,8 +33,8 @@ DATALOADER:
 SOLVER:
   OPTIMIZER_NAME: 'SGD'
   MAX_EPOCHS: 120
-  BASE_LR: 0.01
-  IMS_PER_BATCH: 64
+  BASE_LR: 0.045
+  IMS_PER_BATCH: 256
   WARMUP_METHOD: 'linear'
   LARGE_FC_LR: False
   CHECKPOINT_PERIOD: 120
@@ -56,4 +52,4 @@ TEST:
   NECK_FEAT: 'before'
   FEAT_NORM: 'yes'
 
-OUTPUT_DIR: '../logs/veri_vit_transreid_stride'
+OUTPUT_DIR: '../logs/veriwild_vit_transreid_stride'

@@ -88,7 +88,9 @@ def eval_func(distmat, q_pids, g_pids, q_camids, g_camids, max_rank=50):
 
 
 class R1_mAP_eval():
+
     def __init__(self, num_query, max_rank=50, feat_norm=True, reranking=False):
+
         super(R1_mAP_eval, self).__init__()
         self.num_query = num_query
         self.max_rank = max_rank
