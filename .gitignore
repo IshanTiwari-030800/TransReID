@@ -2,7 +2,10 @@
 .fuse_hidden*
 
 # KDE directory preferences
-.directory
+.directory/
+
+# Weights & Biases run logs
+wandb/
 
 # Linux trash folder which might appear on any partition or disk
 .Trash-*
