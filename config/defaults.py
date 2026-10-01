@@ -183,6 +183,12 @@ _C.TEST.DIST_MAT = "dist_mat.npy"
 # Whether calculate the eval score option: 'True', 'False'
 _C.TEST.EVAL = False
 # ---------------------------------------------------------------------------- #
+# Weights & Biases
+# ---------------------------------------------------------------------------- #
+_C.WANDB = CN()
+_C.WANDB.PROJECT = "transreid"
+
+# ---------------------------------------------------------------------------- #
 # Misc options
 # ---------------------------------------------------------------------------- #
 # Path to checkpoint and saved log of trained model

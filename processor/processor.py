@@ -34,12 +34,25 @@ def do_train(cfg,
     _LOCAL_PROCESS_GROUP = None
 
     is_main_process = (not cfg.MODEL.DIST_TRAIN) or dist.get_rank() == 0
+
     if is_main_process:
         wandb.init(
-            project=os.environ.get("WANDB_PROJECT", "transreid"),
+            project=cfg.WANDB.PROJECT,
             name=os.path.basename(os.path.normpath(cfg.OUTPUT_DIR)),
             config=yaml.safe_load(cfg.dump()),
         )
+        # Patch-embedding architecture details, read off the actual instantiated backbone
+        # (not the model.to(local_rank)/DDP-wrapped `model`, so this must run before that below).
+        backbone = model.base
+        patch_embed = backbone.patch_embed
+        wandb.config.update({
+            "arch/patch_size": tuple(patch_embed.patch_size),
+            "arch/stride_size": tuple(cfg.MODEL.STRIDE_SIZE),
+            "arch/num_patches_y": patch_embed.num_y,
+            "arch/num_patches_x": patch_embed.num_x,
+            "arch/num_patches": patch_embed.num_y * patch_embed.num_x,
+            "arch/pos_embed_shape": tuple(backbone.pos_embed.shape),
+        })
     global_step = 0
 
     if device:
