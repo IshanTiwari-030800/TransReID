@@ -223,3 +223,7 @@ ENV/
 # Rope project settings
 .ropeproject
 
+
+# KD runs (kd_runs/<dataset>/<method>/): logs, metrics and configs are committed; model weights are too large for git
+kd_runs/**/*.pth
+kd_runs/**/*.pth.tmp

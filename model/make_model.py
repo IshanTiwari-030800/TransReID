@@ -3,6 +3,7 @@ import torch.nn as nn
 from .backbones.resnet import ResNet, Bottleneck
 import copy
 from .backbones.vit_pytorch import vit_base_patch16_224_TransReID, vit_base_patch12_224_TransReID, vit_base_patch8_224_TransReID, vit_base_patch8x4_224_TransReID, vit_small_patch16_224_TransReID, deit_small_patch16_224_TransReID
+from .backbones.deformable_vit import deformable_vit_base_patch8_TransReID
 from loss.metric_learning import Arcface, Cosface, AMSoftmax, CircleLoss
 
 def shuffle_unit(features, shift, group, begin=1):
@@ -141,10 +142,15 @@ class build_transformer(nn.Module):
         else:
             view_num = 0
 
+        deform_kwargs = {}
+        if cfg.MODEL.TRANSFORMER_TYPE.startswith('deformable_'):
+            deform_kwargs = dict(deform_blocks=cfg.MODEL.DEFORM.BLOCKS, deform_groups=cfg.MODEL.DEFORM.GROUPS,
+                                 deform_downsample=cfg.MODEL.DEFORM.DOWNSAMPLE, deform_kernel=cfg.MODEL.DEFORM.KERNEL,
+                                 deform_offset_range=cfg.MODEL.DEFORM.OFFSET_RANGE)
         self.base = factory[cfg.MODEL.TRANSFORMER_TYPE](img_size=cfg.INPUT.SIZE_TRAIN, sie_xishu=cfg.MODEL.SIE_COE,
                                                         camera=camera_num, view=view_num, stride_size=cfg.MODEL.STRIDE_SIZE, drop_path_rate=cfg.MODEL.DROP_PATH,
                                                         drop_rate= cfg.MODEL.DROP_OUT,
-                                                        attn_drop_rate=cfg.MODEL.ATT_DROP_RATE)
+                                                        attn_drop_rate=cfg.MODEL.ATT_DROP_RATE, **deform_kwargs)
         self.base.grad_checkpoint = cfg.MODEL.GRAD_CHECKPOINT
         if cfg.MODEL.TRANSFORMER_TYPE == 'deit_small_patch16_224_TransReID':
             self.in_planes = 384
@@ -389,6 +395,7 @@ __factory_T_type = {
     'vit_base_patch12_224_TransReID': vit_base_patch12_224_TransReID,
     'vit_base_patch8_224_TransReID': vit_base_patch8_224_TransReID,
     'vit_base_patch8x4_224_TransReID': vit_base_patch8x4_224_TransReID,
+    'deformable_vit_base_patch8_TransReID': deformable_vit_base_patch8_TransReID,
     'deit_base_patch16_224_TransReID': vit_base_patch16_224_TransReID,
     'vit_small_patch16_224_TransReID': vit_small_patch16_224_TransReID,
     'deit_small_patch16_224_TransReID': deit_small_patch16_224_TransReID,

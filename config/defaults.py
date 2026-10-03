@@ -70,6 +70,19 @@ _C.MODEL.SIE_COE = 3.0
 _C.MODEL.SIE_CAMERA = False
 _C.MODEL.SIE_VIEW = False
 
+# Deformable attention (only read by the deformable_* TRANSFORMER_TYPEs, see model/backbones/deformable_vit.py)
+_C.MODEL.DEFORM = CN()
+# Indices of the blocks whose attention is deformable; empty means every block
+_C.MODEL.DEFORM.BLOCKS = []
+# Offset groups: each group of channels predicts and samples its own set of offsets
+_C.MODEL.DEFORM.GROUPS = 4
+# Reference grid is the token grid downsampled by this factor, so each query attends to N / RATIO^2 keys (+CLS)
+_C.MODEL.DEFORM.DOWNSAMPLE = 2
+# Kernel size of the depthwise conv in the offset network
+_C.MODEL.DEFORM.KERNEL = 5
+# Maximum offset, in units of reference-grid spacing
+_C.MODEL.DEFORM.OFFSET_RANGE = 2.0
+
 # -----------------------------------------------------------------------------
 # INPUT
 # -----------------------------------------------------------------------------
@@ -88,6 +101,8 @@ _C.INPUT.PIXEL_MEAN = [0.485, 0.456, 0.406]
 _C.INPUT.PIXEL_STD = [0.229, 0.224, 0.225]
 # Value of padding size
 _C.INPUT.PADDING = 10
+# Independently augmented views of each training image (DINO-style KD uses 2; everything else uses 1)
+_C.INPUT.NUM_VIEWS = 1
 
 # -----------------------------------------------------------------------------
 # Dataset
@@ -153,6 +168,11 @@ _C.SOLVER.WARMUP_METHOD = "linear"
 _C.SOLVER.COSINE_MARGIN = 0.5
 _C.SOLVER.COSINE_SCALE = 30
 
+# Max global grad norm (0 disables clipping). Used by train_kd.py only.
+_C.SOLVER.CLIP_GRAD = 0.0
+# Debugging only: stop each epoch after this many iterations (0 = full epoch). Used by train_kd.py only.
+_C.SOLVER.MAX_ITERS_PER_EPOCH = 0
+
 # If True, continue from OUTPUT_DIR/checkpoint_latest.pth when it exists (else start fresh).
 # Safe to leave on in sbatch scripts: resubmitting the same script resumes a crashed run.
 _C.SOLVER.RESUME = False
@@ -193,6 +213,60 @@ _C.TEST.EVAL = False
 # ---------------------------------------------------------------------------- #
 _C.WANDB = CN()
 _C.WANDB.PROJECT = "transreid"
+# Set False to train without logging to Weights & Biases (e.g. smoke tests)
+_C.WANDB.ENABLED = True
+
+# ---------------------------------------------------------------------------- #
+# Knowledge distillation (train_kd.py). See kd/README.md.
+# ---------------------------------------------------------------------------- #
+_C.KD = CN()
+# 'none' (student trained on ID + triplet only), 'soft' or 'dino'
+_C.KD.METHOD = 'none'
+
+_C.KD.TEACHER = CN()
+# Config the teacher was trained with (architecture and input size are read from it) and its trained weights
+_C.KD.TEACHER.CONFIG = ''
+_C.KD.TEACHER.WEIGHT = ''
+# Evaluate the teacher on the val set before training, to confirm the weights loaded correctly
+_C.KD.TEACHER.EVAL_AT_START = True
+
+# Soft KD (Hinton et al.): KL between temperature-softened teacher and student ID logits
+_C.KD.SOFT = CN()
+_C.KD.SOFT.TEMPERATURE = 4.0
+_C.KD.SOFT.WEIGHT = 1.0
+
+# DINO-style KD: frozen teacher backbone + EMA projection head gives prototype assignments the student matches
+_C.KD.DINO = CN()
+_C.KD.DINO.WEIGHT = 1.0
+# 'kmeans': frozen prototypes = spherical k-means centroids of the teacher's features on the training set.
+# 'ema': DINO's teacher head = EMA of the student head. See kd/methods.py:DINOKD.
+_C.KD.DINO.TEACHER_HEAD = 'kmeans'
+_C.KD.DINO.KMEANS_ITERS = 30
+# Number of prototypes
+_C.KD.DINO.OUT_DIM = 4096
+_C.KD.DINO.HIDDEN_DIM = 2048
+# Head output dim for 'ema' ('kmeans' projects to the teacher's feature dim)
+_C.KD.DINO.BOTTLENECK_DIM = 256
+_C.KD.DINO.STUDENT_TEMP = 0.1
+_C.KD.DINO.TEACHER_TEMP = 0.07
+_C.KD.DINO.WARMUP_TEACHER_TEMP = 0.04
+_C.KD.DINO.WARMUP_TEACHER_TEMP_EPOCHS = 30
+# 'sinkhorn_knopp' (balanced assignments, DINOv2/SwAV) or 'centering' (EMA center, DINO v1)
+_C.KD.DINO.CENTERING = 'sinkhorn_knopp'
+_C.KD.DINO.SK_ITERS = 3
+_C.KD.DINO.CENTER_MOMENTUM = 0.9
+# 'ema' only: the teacher head's EMA momentum follows a cosine from this value to 1
+_C.KD.DINO.HEAD_MOMENTUM = 0.996
+# 'ema' only: keep the prototype layer fixed for this many epochs (DINO's stabilising trick)
+_C.KD.DINO.FREEZE_LAST_LAYER_EPOCHS = 1
+# How many of the INPUT.NUM_VIEWS views the student sees (the teacher always sees all of them)
+_C.KD.DINO.STUDENT_VIEWS = 1
+# Also match student view i to teacher view i (DINO skips these, but here teacher != student)
+_C.KD.DINO.SAME_VIEW_PAIRS = True
+# KoLeo regulariser on the student's L2-normalised global feature (0 disables)
+_C.KD.DINO.KOLEO_WEIGHT = 0.1
+# Take each sample's nearest neighbour among other identities only, so KoLeo doesn't fight the triplet loss
+_C.KD.DINO.KOLEO_EXCLUDE_SAME_ID = True
 
 # ---------------------------------------------------------------------------- #
 # Misc options

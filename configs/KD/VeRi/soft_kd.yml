@@ -1,0 +1,75 @@
+# Soft KD: ID + triplet loss + T^2 * KL(teacher || student) on temperature-softened ID logits.
+# Student: deformable ViT-Base/8, randomly initialised. Teacher: the ViT-Base/16 trained on this dataset.
+# Everything outside KD is identical across baseline.yml / soft_kd.yml / dino_kd.yml for this dataset.
+MODEL:
+  PRETRAIN_CHOICE: 'scratch'
+  PRETRAIN_PATH: ''
+  METRIC_LOSS_TYPE: 'triplet'
+  IF_LABELSMOOTH: 'off'
+  IF_WITH_CENTER: 'no'
+  NAME: 'transformer'
+  NO_MARGIN: True
+  DEVICE_ID: ('0')
+  TRANSFORMER_TYPE: 'deformable_vit_base_patch8_TransReID'
+  STRIDE_SIZE: [8, 8]
+  DROP_PATH: 0.1
+  GRAD_CHECKPOINT: False
+  DEFORM:
+    BLOCKS: []
+    GROUPS: 4
+    DOWNSAMPLE: 2
+    KERNEL: 5
+    OFFSET_RANGE: 2.0
+
+INPUT:
+  SIZE_TRAIN: [256, 256]
+  SIZE_TEST: [256, 256]
+  PROB: 0.5 # random horizontal flip
+  RE_PROB: 0.5 # random erasing
+  PADDING: 10
+  PIXEL_MEAN: [0.5, 0.5, 0.5]
+  PIXEL_STD: [0.5, 0.5, 0.5]
+  NUM_VIEWS: 1
+
+DATASETS:
+  NAMES: ('veri')
+  ROOT_DIR: ('/mnt/data/ishant/datasets/')
+
+DATALOADER:
+  SAMPLER: 'softmax_triplet'
+  NUM_INSTANCE: 4
+  NUM_WORKERS: 8
+
+SOLVER:
+  OPTIMIZER_NAME: 'AdamW'
+  MAX_EPOCHS: 120
+  BASE_LR: 2.5e-4
+  IMS_PER_BATCH: 128
+  WARMUP_EPOCHS: 10
+  WEIGHT_DECAY: 0.05
+  CLIP_GRAD: 3.0
+  LOG_PERIOD: 50
+  EVAL_PERIOD: 10
+  SEED: 1234
+
+TEST:
+  EVAL: True
+  IMS_PER_BATCH: 256
+  RE_RANKING: False
+  WEIGHT: ''
+  NECK_FEAT: 'before'
+  FEAT_NORM: 'yes'
+
+KD:
+  METHOD: 'soft'
+  TEACHER:
+    CONFIG: 'configs/VeRi/vit_base_p16_control.yml'
+    WEIGHT: '/mnt/data/ishant/TransReID/logs/veri_vit_base_p16_control/transformer_best.pth'
+  SOFT:
+    TEMPERATURE: 4.0
+    WEIGHT: 1.0
+
+WANDB:
+  PROJECT: 'transreid-kd'
+
+OUTPUT_DIR: 'kd_runs/veri776/soft_kd'

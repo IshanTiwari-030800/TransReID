@@ -24,6 +24,16 @@ __factory = {
     'veriwild': VeriWild,
 }
 
+class MultiViewTransform:
+    """Applies the same random transform independently num_views times -> (num_views, C, H, W)."""
+    def __init__(self, transform, num_views):
+        self.transform = transform
+        self.num_views = num_views
+
+    def __call__(self, img):
+        return torch.stack([self.transform(img) for _ in range(self.num_views)])
+
+
 def train_collate_fn(batch):
     """
     # collate_fn这个函数的输入就是一个list，list的长度是一个batch size，list中的每个元素都是__getitem__得到的结果
@@ -51,6 +61,9 @@ def make_dataloader(cfg):
             RandomErasing(probability=cfg.INPUT.RE_PROB, mode='pixel', max_count=1, device='cpu'),
             # RandomErasing(probability=cfg.INPUT.RE_PROB, mean=cfg.INPUT.PIXEL_MEAN)
         ])
+
+    if cfg.INPUT.NUM_VIEWS > 1:
+        train_transforms = MultiViewTransform(train_transforms, cfg.INPUT.NUM_VIEWS)
 
     val_transforms = T.Compose([
         T.Resize(cfg.INPUT.SIZE_TEST),
