@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 from .backbones.resnet import ResNet, Bottleneck
 import copy
-from .backbones.vit_pytorch import vit_base_patch16_224_TransReID, vit_base_patch12_224_TransReID, vit_small_patch16_224_TransReID, deit_small_patch16_224_TransReID
+from .backbones.vit_pytorch import vit_base_patch16_224_TransReID, vit_base_patch12_224_TransReID, vit_base_patch8_224_TransReID, vit_base_patch8x4_224_TransReID, vit_small_patch16_224_TransReID, deit_small_patch16_224_TransReID
 from loss.metric_learning import Arcface, Cosface, AMSoftmax, CircleLoss
 
 def shuffle_unit(features, shift, group, begin=1):
@@ -145,6 +145,7 @@ class build_transformer(nn.Module):
                                                         camera=camera_num, view=view_num, stride_size=cfg.MODEL.STRIDE_SIZE, drop_path_rate=cfg.MODEL.DROP_PATH,
                                                         drop_rate= cfg.MODEL.DROP_OUT,
                                                         attn_drop_rate=cfg.MODEL.ATT_DROP_RATE)
+        self.base.grad_checkpoint = cfg.MODEL.GRAD_CHECKPOINT
         if cfg.MODEL.TRANSFORMER_TYPE == 'deit_small_patch16_224_TransReID':
             self.in_planes = 384
         if pretrain_choice == 'imagenet':
@@ -386,6 +387,8 @@ class build_transformer_local(nn.Module):
 __factory_T_type = {
     'vit_base_patch16_224_TransReID': vit_base_patch16_224_TransReID,
     'vit_base_patch12_224_TransReID': vit_base_patch12_224_TransReID,
+    'vit_base_patch8_224_TransReID': vit_base_patch8_224_TransReID,
+    'vit_base_patch8x4_224_TransReID': vit_base_patch8x4_224_TransReID,
     'deit_base_patch16_224_TransReID': vit_base_patch16_224_TransReID,
     'vit_small_patch16_224_TransReID': vit_small_patch16_224_TransReID,
     'deit_small_patch16_224_TransReID': deit_small_patch16_224_TransReID,

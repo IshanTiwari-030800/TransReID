@@ -10,8 +10,14 @@ import torch
 import numpy as np
 import os
 import argparse
+import datetime
+import faulthandler
+import signal
 # from timm.scheduler import create_scheduler
 from config import cfg
+
+# `kill -USR1 <pid>` prints every Python thread's stack to stderr (py-spy can't attach on this node).
+faulthandler.register(signal.SIGUSR1, all_threads=True)
 
 def set_seed(seed):
     torch.manual_seed(seed)
@@ -31,7 +37,8 @@ if __name__ == '__main__':
 
     parser.add_argument("opts", help="Modify config options using the command-line", default=None,
                         nargs=argparse.REMAINDER)
-    parser.add_argument("--local_rank", default=0, type=int)
+    # torchrun passes the rank via the LOCAL_RANK env var; torch.distributed.launch passes --local_rank.
+    parser.add_argument("--local_rank", "--local-rank", default=int(os.environ.get("LOCAL_RANK", 0)), type=int)
     args = parser.parse_args()
 
     if args.config_file != "":
@@ -39,7 +46,9 @@ if __name__ == '__main__':
     cfg.merge_from_list(args.opts)
     cfg.freeze()
 
-    set_seed(cfg.SOLVER.SEED)
+    # Offset by rank so each DDP process draws different augmentations; rank 0 (and single-GPU) keeps
+    # cfg.SOLVER.SEED. Model weights stay identical across ranks because DDP broadcasts rank 0's on wrap.
+    set_seed(cfg.SOLVER.SEED + int(os.environ.get("RANK", 0)))
 
     if cfg.MODEL.DIST_TRAIN:
         torch.cuda.set_device(args.local_rank)
@@ -48,7 +57,7 @@ if __name__ == '__main__':
     if output_dir and not os.path.exists(output_dir):
         os.makedirs(output_dir)
 
-    logger = setup_logger("transreid", output_dir, if_train=True)
+    logger = setup_logger("transreid", output_dir, if_train=True, resume=cfg.SOLVER.RESUME)
     logger.info("Saving model in the path :{}".format(cfg.OUTPUT_DIR))
     logger.info(args)
 
@@ -60,7 +69,11 @@ if __name__ == '__main__':
     logger.info("Running with config:\n{}".format(cfg))
 
     if cfg.MODEL.DIST_TRAIN:
-        torch.distributed.init_process_group(backend='nccl', init_method='env://')
+        # Must exceed rank 0's full evaluation, during which the other ranks wait at a barrier. A rank that
+        # hangs mid-step is only detected (and the job killed, so it can be resumed) after this long.
+        timeout_min = int(os.environ.get('DIST_TIMEOUT_MIN', 120))
+        torch.distributed.init_process_group(backend='nccl', init_method='env://',
+                                             timeout=datetime.timedelta(minutes=timeout_min))
 
     os.environ['CUDA_VISIBLE_DEVICES'] = cfg.MODEL.DEVICE_ID
     train_loader, train_loader_normal, val_loader, num_query, num_classes, camera_num, view_num = make_dataloader(cfg)

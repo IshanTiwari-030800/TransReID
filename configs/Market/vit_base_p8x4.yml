@@ -1,18 +1,19 @@
 MODEL:
   PRETRAIN_CHOICE: 'imagenet'
-  PRETRAIN_PATH: '/home/ishan/Desktop/Ishans_workspace/pretrained_weights/jx_vit_base_p16_224-80ecf9dd.pth'
+  PRETRAIN_PATH: '/mnt/data/ishant/pretrained_weights/imagenet_vit8x4.pth'
   METRIC_LOSS_TYPE: 'triplet'
   IF_LABELSMOOTH: 'off'
   IF_WITH_CENTER: 'no'
   NAME: 'transformer'
   NO_MARGIN: True
   DEVICE_ID: ('0')
-  TRANSFORMER_TYPE: 'vit_base_patch16_224_TransReID'
-  STRIDE_SIZE: [16, 16]
+  TRANSFORMER_TYPE: 'vit_base_patch8x4_224_TransReID'
+  STRIDE_SIZE: [8, 4]
+  GRAD_CHECKPOINT: True
 
 INPUT:
-  SIZE_TRAIN: [256, 256]
-  SIZE_TEST: [256, 256]
+  SIZE_TRAIN: [256, 128]
+  SIZE_TEST: [256, 128]
   PROB: 0.5 # random horizontal flip
   RE_PROB: 0.5 # random erasing
   PADDING: 10
@@ -20,8 +21,8 @@ INPUT:
   PIXEL_STD: [0.5, 0.5, 0.5]
 
 DATASETS:
-  NAMES: ('veri')
-  ROOT_DIR: ('/home/ishan/Desktop/Ishans_workspace/datasets/')
+  NAMES: ('market1501')
+  ROOT_DIR: ('/mnt/data/ishant/datasets/')
 
 DATALOADER:
   SAMPLER: 'softmax_triplet'
@@ -51,6 +52,6 @@ TEST:
   FEAT_NORM: 'yes'
 
 WANDB:
-  PROJECT: 'transreid'
+  PROJECT: 'transreid-market'
 
-OUTPUT_DIR: '../logs/veri_vit_base_p16_control'
+OUTPUT_DIR: '../logs/market_vit_base_p8x4'

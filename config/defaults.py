@@ -51,6 +51,8 @@ _C.MODEL.COS_LAYER = False
 
 # Transformer setting
 _C.MODEL.DROP_PATH = 0.1
+# Recompute transformer-block activations in backward to save memory (same math, ~30% slower)
+_C.MODEL.GRAD_CHECKPOINT = False
 _C.MODEL.DROP_OUT = 0.0
 _C.MODEL.ATT_DROP_RATE = 0.0
 _C.MODEL.TRANSFORMER_TYPE = 'None'
@@ -151,6 +153,10 @@ _C.SOLVER.WARMUP_METHOD = "linear"
 _C.SOLVER.COSINE_MARGIN = 0.5
 _C.SOLVER.COSINE_SCALE = 30
 
+# If True, continue from OUTPUT_DIR/checkpoint_latest.pth when it exists (else start fresh).
+# Safe to leave on in sbatch scripts: resubmitting the same script resumes a crashed run.
+_C.SOLVER.RESUME = False
+
 # epoch number of saving checkpoints
 _C.SOLVER.CHECKPOINT_PERIOD = 10
 # iteration of display training log
@@ -182,6 +188,12 @@ _C.TEST.FEAT_NORM = 'yes'
 _C.TEST.DIST_MAT = "dist_mat.npy"
 # Whether calculate the eval score option: 'True', 'False'
 _C.TEST.EVAL = False
+# ---------------------------------------------------------------------------- #
+# Weights & Biases
+# ---------------------------------------------------------------------------- #
+_C.WANDB = CN()
+_C.WANDB.PROJECT = "transreid"
+
 # ---------------------------------------------------------------------------- #
 # Misc options
 # ---------------------------------------------------------------------------- #

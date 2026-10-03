@@ -1,6 +1,6 @@
 MODEL:
   PRETRAIN_CHOICE: 'imagenet'
-  PRETRAIN_PATH: '/home/ishan/Desktop/Ishans_workspace/pretrained_weights/jx_vit_base_p16_224-80ecf9dd.pth'
+  PRETRAIN_PATH: '/mnt/data/ishant/pretrained_weights/jx_vit_base_p16_224-80ecf9dd.pth'
   METRIC_LOSS_TYPE: 'triplet'
   IF_LABELSMOOTH: 'off'
   IF_WITH_CENTER: 'no'
@@ -20,8 +20,8 @@ INPUT:
   PIXEL_STD: [0.5, 0.5, 0.5]
 
 DATASETS:
-  NAMES: ('veri')
-  ROOT_DIR: ('/home/ishan/Desktop/Ishans_workspace/datasets/')
+  NAMES: ('veriwild')
+  ROOT_DIR: ('/mnt/data/ishant/datasets/')
 
 DATALOADER:
   SAMPLER: 'softmax_triplet'
@@ -51,6 +51,6 @@ TEST:
   FEAT_NORM: 'yes'
 
 WANDB:
-  PROJECT: 'transreid'
+  PROJECT: 'transreid-veriwild'
 
-OUTPUT_DIR: '../logs/veri_vit_base_p16_control'
+OUTPUT_DIR: '../logs/veriwild_vit_base_p16_control'
