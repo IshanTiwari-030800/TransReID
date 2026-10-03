@@ -148,6 +148,17 @@ Every `LOG_PERIOD` iterations the log and W&B record collapse diagnostics (`coll
   out, near 0 when collapsed. A randomly initialised ViT starts near 0 because all images give almost the same CLS
   feature.
 
+## Measured speed (MI300X, smoke tests)
+
+| Run | s / batch | Peak mem / GPU | Full run (incl. eval) |
+|---|---|---|---|
+| Market, 1 GPU (baseline / soft / DINO) | 0.43 / 0.47 / 0.49 | 28 GB | ~2.5–3 h |
+| VeRi-776, 1 GPU (soft / DINO) | ~1.0 / ~0.9 | 53 GB | ~9–10 h |
+| VeRi-Wild, 2 GPUs (DINO) | ~1.3 | 54 GB | ~21–22 h |
+
+`slurm/kd/submit.sh` chains 1 / 2 / 3 jobs of 24 h for Market / VeRi / VeRi-Wild. A job that starts after its run has
+finished exits immediately.
+
 ## Running
 
 ```bash

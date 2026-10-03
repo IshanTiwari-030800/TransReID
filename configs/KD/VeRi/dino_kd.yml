@@ -34,7 +34,7 @@ INPUT:
 
 DATASETS:
   NAMES: ('veri')
-  ROOT_DIR: ('/mnt/data/ishant/datasets/')
+  ROOT_DIR: ('/mnt/data/ishant/datasets/VeRI-776/')
 
 DATALOADER:
   SAMPLER: 'softmax_triplet'
