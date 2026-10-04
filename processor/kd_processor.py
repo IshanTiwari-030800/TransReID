@@ -113,7 +113,7 @@ def do_train_kd(cfg, model, teacher, kd, train_loader, train_loader_normal, val_
         return
 
     if use_wandb:
-        wandb.init(project=cfg.WANDB.PROJECT, name=os.path.basename(os.path.normpath(cfg.OUTPUT_DIR)),
+        wandb.init(project=cfg.WANDB.PROJECT, name=cfg.WANDB.NAME or os.path.basename(os.path.normpath(cfg.OUTPUT_DIR)),
                    config=yaml.safe_load(cfg.dump()), id=wandb_run_id, resume="allow")
         wandb_run_id = wandb.run.id
 

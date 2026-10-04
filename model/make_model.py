@@ -186,6 +186,10 @@ class build_transformer(nn.Module):
         self.bottleneck.bias.requires_grad_(False)
         self.bottleneck.apply(weights_init_kaiming)
 
+        if pretrain_choice == 'finetune':
+            # A trained ReID checkpoint of this same model (backbone, BNNeck and classifier), e.g. a KD student
+            self.load_param(model_path)
+
     def forward(self, x, label=None, cam_label= None, view_label=None):
         global_feat = self.base(x, cam_label=cam_label, view_label=view_label)
 

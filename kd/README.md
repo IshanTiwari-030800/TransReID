@@ -171,6 +171,10 @@ slurm/kd/submit.sh veriwild soft_kd      # 2-GPU DDP
 slurm/kd/submit.sh veriwild dino_kd
 slurm/kd/submit.sh market   baseline     # optional no-KD reference, same for veri / veriwild
 
+# KD, then fine-tune the distilled transformer_best.pth without KD (configs/KD/Market/finetune.yml: 60 epochs,
+# LR 2.5e-5) into kd_runs/market1501/<method>_ft/. W&B runs: market1501_<method>, market1501_<method>_ft
+FINETUNE=1 slurm/kd/submit.sh market dino_kd
+
 # Interactive / custom (any config key can be overridden on the command line)
 srun --gres=gpu:1 --cpus-per-task=16 --mem=64G --partition=debug \
      bash slurm/kd/train_kd.sh configs/KD/Market/dino_kd.yml KD.DINO.KOLEO_WEIGHT 0.0

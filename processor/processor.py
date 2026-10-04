@@ -110,7 +110,7 @@ def do_train(cfg,
     if is_main_process:
         wandb.init(
             project=cfg.WANDB.PROJECT,
-            name=os.path.basename(os.path.normpath(cfg.OUTPUT_DIR)),
+            name=cfg.WANDB.NAME or os.path.basename(os.path.normpath(cfg.OUTPUT_DIR)),
             config=yaml.safe_load(cfg.dump()),
             id=wandb_run_id,           # None on a fresh run -> wandb generates one
             resume="allow",

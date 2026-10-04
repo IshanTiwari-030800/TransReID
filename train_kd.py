@@ -37,6 +37,9 @@ def check_kd_config(cfg):
             raise ValueError('need 1 <= KD.DINO.STUDENT_VIEWS ({}) <= INPUT.NUM_VIEWS ({})'.format(s, v))
         if v == 1 and not cfg.KD.DINO.SAME_VIEW_PAIRS:
             raise ValueError('with one view, KD.DINO.SAME_VIEW_PAIRS must be True or there are no pairs to match')
+    if cfg.MODEL.PRETRAIN_CHOICE == 'finetune' and not os.path.isfile(cfg.MODEL.PRETRAIN_PATH):
+        raise ValueError('MODEL.PRETRAIN_CHOICE finetune needs MODEL.PRETRAIN_PATH to be a checkpoint; got {!r}'.format(
+            cfg.MODEL.PRETRAIN_PATH))
     if method != 'none' and not (cfg.KD.TEACHER.CONFIG and cfg.KD.TEACHER.WEIGHT):
         raise ValueError('KD.METHOD {} needs KD.TEACHER.CONFIG and KD.TEACHER.WEIGHT'.format(method))
 
@@ -98,9 +101,9 @@ if __name__ == '__main__':
 
     iters_per_epoch = min(cfg.SOLVER.MAX_ITERS_PER_EPOCH or len(train_loader), len(train_loader))
     student, kd = build_kd(cfg, student, iters_per_epoch)
-    logger.info("Student: {} ({:.1f}M params incl. KD head), randomly initialised: {}".format(
-        cfg.MODEL.TRANSFORMER_TYPE, sum(p.numel() for p in student.parameters()) / 1e6,
-        cfg.MODEL.PRETRAIN_CHOICE != 'imagenet'))
+    init = cfg.MODEL.PRETRAIN_PATH if cfg.MODEL.PRETRAIN_CHOICE in ('imagenet', 'finetune') else 'random'
+    logger.info("Student: {} ({:.1f}M params incl. KD head), initialised from: {}".format(
+        cfg.MODEL.TRANSFORMER_TYPE, sum(p.numel() for p in student.parameters()) / 1e6, init))
 
     reid_loss_fn, _ = make_loss(cfg, num_classes=num_classes)
     optimizer = make_kd_optimizer(cfg, student)

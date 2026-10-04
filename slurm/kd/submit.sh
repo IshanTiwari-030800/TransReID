@@ -9,7 +9,11 @@
 # Output: kd_runs/<market1501|veri776|veriwild>/<method>/ (train_log.txt, metrics.jsonl, config.yaml,
 #         slurm_<jobid>.log/.err, and the git-ignored *.pth checkpoints)
 #
+# W&B runs are named <dataset>_<method> (e.g. market1501_dino_kd).
+#
 # Env: SPARE_GPUS  extra Slurm slots to book so the job can skip GPU 6 (default 1 for DDP runs, 0 otherwise)
+#      FINETUNE=1  after the KD chain succeeds, fine-tune its transformer_best.pth without KD
+#                  (configs/KD/<dataset>/finetune.yml) into kd_runs/<dataset>/<method>_ft/, W&B run <dataset>_<method>_ft
 # =============================================================================
 set -euo pipefail
 cd "$(dirname "$0")/../.."
@@ -31,14 +35,34 @@ RUN_DIR="kd_runs/$OUT/$METHOD"
 mkdir -p "$RUN_DIR"   # Slurm doesn't create the directory for --output/--error
 
 SPARE_GPUS="${SPARE_GPUS:-$([ "$NUM_GPUS" -gt 1 ] && echo 1 || echo 0)}"
-prev=""
-for i in $(seq 1 "$CHAIN"); do
-    prev=$(sbatch --parsable ${prev:+--dependency=afterany:$prev} \
-        --job-name="kd-$DATASET-$METHOD" \
+FT_CONFIG="configs/KD/$CFG_DIR/finetune.yml"
+if [ "${FINETUNE:-0}" = 1 ]; then
+    [ -f "$FT_CONFIG" ] || { echo "FINETUNE=1 but no config $FT_CONFIG" >&2; exit 1; }
+fi
+sbatch_run() {   # <job name> <run dir> <dependency or ""> <train_kd.sh args...>
+    local name=$1 dir=$2 dep=$3; shift 3
+    sbatch --parsable ${dep:+--dependency=$dep} \
+        --job-name="$name" \
         --gres="gpu:$((NUM_GPUS + SPARE_GPUS))" \
         --cpus-per-task=$((16 * NUM_GPUS)) --mem=$((64 * NUM_GPUS))GB \
-        --output="$RUN_DIR/slurm_%j.log" --error="$RUN_DIR/slurm_%j.err" \
+        --output="$dir/slurm_%j.log" --error="$dir/slurm_%j.err" \
         --export=ALL,NUM_GPUS="$NUM_GPUS" \
-        slurm/kd/train_kd.sh "$CONFIG")
+        slurm/kd/train_kd.sh "$@"
+}
+
+prev=""
+for i in $(seq 1 "$CHAIN"); do
+    prev=$(sbatch_run "kd-$DATASET-$METHOD" "$RUN_DIR" "${prev:+afterany:$prev}" \
+        "$CONFIG" WANDB.NAME "${OUT}_$METHOD")
     echo "kd-$DATASET-$METHOD: job $prev ($i/$CHAIN)"
 done
+
+if [ "${FINETUNE:-0}" = 1 ]; then
+    # The last KD job exits 0 once training is done (immediately, if an earlier job finished it).
+    FT_DIR="${RUN_DIR}_ft"
+    mkdir -p "$FT_DIR"
+    ft=$(sbatch_run "ft-$DATASET-$METHOD" "$FT_DIR" "afterok:$prev" \
+        "$FT_CONFIG" MODEL.PRETRAIN_PATH "$RUN_DIR/transformer_best.pth" OUTPUT_DIR "$FT_DIR" \
+        WANDB.NAME "${OUT}_${METHOD}_ft")
+    echo "ft-$DATASET-$METHOD: job $ft (after $prev succeeds)"
+fi

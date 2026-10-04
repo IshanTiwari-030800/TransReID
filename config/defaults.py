@@ -215,6 +215,8 @@ _C.WANDB = CN()
 _C.WANDB.PROJECT = "transreid"
 # Set False to train without logging to Weights & Biases (e.g. smoke tests)
 _C.WANDB.ENABLED = True
+# Run name; empty uses the basename of OUTPUT_DIR
+_C.WANDB.NAME = ''
 
 # ---------------------------------------------------------------------------- #
 # Knowledge distillation (train_kd.py). See kd/README.md.
